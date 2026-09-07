@@ -760,6 +760,19 @@ class KritaMCPExtension(Extension):
 
     # -- Selection Tools ------------------------------------------------------
 
+    def _get_or_create_selection(self, doc) -> Any:
+        """Return the document's active Selection, creating an empty one if none exists.
+
+        Krita's Document.selection() returns None whenever the document has no
+        selection yet (documented behavior, not version-dependent) — callers used
+        to treat that as a missing API, which broke select_* on any fresh document.
+        """
+        selection = doc.selection()
+        if not selection:
+            selection = Selection()
+            doc.setSelection(selection)
+        return selection
+
     def cmd_select_area(self, params: dict[str, Any]) -> dict[str, Any]:
         """Select a rectangular area."""
         doc = self.get_active_document()
@@ -774,11 +787,7 @@ class KritaMCPExtension(Extension):
         if w < 1 or h < 1 or x < 0 or y < 0:
             return make_error("Invalid selection dimensions", code="INVALID_PARAMETERS", recoverable=True)
 
-        selection = doc.selection()
-        if not selection:
-            return make_error(
-                "Selection API not available in this Krita version", code="INTERNAL_ERROR", recoverable=False
-            )
+        selection = self._get_or_create_selection(doc)
 
         selection.select(x, y, w, h, 255)
         doc.refreshProjection()
@@ -816,11 +825,7 @@ class KritaMCPExtension(Extension):
         if rx < 1 or ry < 1:
             return make_error("Invalid ellipse dimensions", code="INVALID_PARAMETERS", recoverable=True)
 
-        selection = doc.selection()
-        if not selection:
-            return make_error(
-                "Selection API not available in this Krita version", code="INTERNAL_ERROR", recoverable=False
-            )
+        selection = self._get_or_create_selection(doc)
 
         try:
             selection.selectEllipse(cx - rx, cy - ry, rx * 2, ry * 2, 255)
@@ -849,11 +854,7 @@ class KritaMCPExtension(Extension):
         if len(points) < 3:
             return make_error("Polygon requires at least 3 points", code="INVALID_PARAMETERS", recoverable=True)
 
-        selection = doc.selection()
-        if not selection:
-            return make_error(
-                "Selection API not available in this Krita version", code="INTERNAL_ERROR", recoverable=False
-            )
+        selection = self._get_or_create_selection(doc)
 
         polygon = QPolygon([QPoint(int(p[0]), int(p[1])) for p in points])
         selection.selectPolygon(polygon, 255)
