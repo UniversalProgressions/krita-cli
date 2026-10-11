@@ -23,7 +23,9 @@ def test_cli_no_args_shows_help() -> None:
 
 
 def test_cli_health_connection_error() -> None:
-    result = runner.invoke(app, ["health"])
+    # Point at an unreachable URL so the test does not depend on whether a
+    # local Krita instance happens to be running on the default port.
+    result = runner.invoke(app, ["--url", "http://127.0.0.1:1", "health"])
     assert result.exit_code == 1
     assert "Cannot connect to Krita" in result.output
 

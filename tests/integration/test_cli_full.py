@@ -8,10 +8,7 @@ import pytest
 from typer.testing import CliRunner
 
 from krita_cli.cli import app, main
-from krita_client import (
-    KritaClient,
-    KritaConnectionError,
-)
+from krita_client import KritaClient
 
 runner = CliRunner()
 
@@ -26,11 +23,11 @@ def test_cli_main_keyboard_interrupt(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_cli_main_connection_error(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that KritaConnectionError in main is handled."""
-    with patch("krita_cli.app.app") as mock_app:
-        mock_app.side_effect = KritaConnectionError("refused")
-        result = runner.invoke(app, ["health"])
-        assert result.exit_code == 1
+    """Test that a connection error is surfaced as exit code 1."""
+    # Point at an unreachable URL so the test does not depend on whether a
+    # local Krita instance happens to be running on the default port.
+    result = runner.invoke(app, ["--url", "http://127.0.0.1:1", "health"])
+    assert result.exit_code == 1
 
 
 def test_cli_callback_sets_url() -> None:

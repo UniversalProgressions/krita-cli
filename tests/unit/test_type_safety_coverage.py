@@ -136,16 +136,14 @@ def test_server_batch_type_safety_extended() -> None:
         assert "a4: unknown" in result
 
 
-def test_cli_replay_array_check() -> None:
+def test_cli_replay_array_check(tmp_path) -> None:
     """Test CLI replay check for JSON array."""
     runner = CliRunner()
-    with runner.isolated_filesystem():
-        f = "not_array.json"
-        with open(f, "w") as j:
-            json.dump({"not": "an array"}, j)
+    f = tmp_path / "not_array.json"
+    f.write_text(json.dumps({"not": "an array"}))
 
-        result = runner.invoke(app, ["replay", f])
-        assert "JSON file must contain an array" in result.output
+    result = runner.invoke(app, ["replay", str(f)])
+    assert "JSON file must contain an array" in result.output
 
 
 def test_cli_history_empty_check() -> None:
